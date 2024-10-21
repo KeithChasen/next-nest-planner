@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  email    String  @unique
+  name     String?
+  password String
+
+  workInterval   Int? @default(50)
+  breakInterval  Int? @default(10)
+  intervalsCount Int? @default(7)
+
+  tasks           Task[]
+  timeBlocks      TimeBlock[]
+  pomodorSessions PomodoroSession[]
+
+  @@map("user")
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name        String
+  priority    Priority?
+  isCompleted Boolean?  @default(false) @map("is_completed")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("task")
+}
+
+model TimeBlock {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name     String
+  color    String?
+  duration Int
+  order    Int     @default(1)
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("time_block")
+}
+
+model PomodoroSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  isCompleted Boolean? @default(false) @map("is_completed")
+
+  pomodoroRounds PomodoroRound[]
+
+  @@map("pomodoro_session")
+}
+
+model PomodoroRound {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  pomodoroSessionId String          @map("pomodoro_session_id")
+  pomodoroSession   PomodoroSession @relation(fields: [pomodoroSessionId], references: [id], onDelete: Cascade)
+
+  isCompleted  Boolean? @default(false) @map("is_completed")
+  totalSeconds Int
+
+  @@map("pomodoro_round")
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
